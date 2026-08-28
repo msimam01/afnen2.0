@@ -13,8 +13,11 @@ return new class extends Migration
             $table->uuid('uuid')->unique();
 
             $table->foreignId('global_tenant_allocation_id')
-                ->constrained('global_tenant_allocations')
-                ->cascadeOnDelete();
+    ->constrained(
+        table: 'global_tenant_allocations',
+        indexName: 'gta_transactions_allocation_fk'
+    )
+    ->cascadeOnDelete();
 
             $table->enum('type', [
                 'allocation',
@@ -38,10 +41,10 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index([
-                'reference_type',
-                'reference_id',
-            ]);
+            $table->index(
+    ['reference_type', 'reference_id'],
+    'gta_tx_reference_idx'
+);
         });
     }
 

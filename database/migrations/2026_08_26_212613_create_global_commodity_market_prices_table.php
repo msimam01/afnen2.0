@@ -42,10 +42,10 @@ return new class extends Migration
 
     $table->timestamps();
 
-    $table->index([
-        'global_commodity_id',
-        'global_season_id',
-    ]);
+    $table->index(
+    ['global_commodity_id', 'global_season_id'],
+    'gcmp_commodity_season_idx'
+);
 });
     }
 
