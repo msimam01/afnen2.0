@@ -28,132 +28,148 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     ];
 
     public const PROVISIONING_PENDING = 'pending';
+
     public const PROVISIONING = 'provisioning';
+
     public const PROVISIONING_READY = 'ready';
+
     public const PROVISIONING_FAILED = 'failed';
 
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_INACTIVE = 'inactive';
+
     public const STATUS_SUSPENDED = 'suspended';
 
     public function getNameAttribute(): string
-{
-    return $this->data['name'] ?? 'Unknown';
-}
+    {
+        return $this->data['name'] ?? 'Unknown';
+    }
 
-public function getDescriptionAttribute(): ?string
-{
-    return $this->data['description'] ?? null;
-}
+    public function getDescriptionAttribute(): ?string
+    {
+        return $this->data['description'] ?? null;
+    }
 
-public function isProvisioningPending(): bool
-{
-    return $this->provisioning_status === self::PROVISIONING_PENDING;
-}
+    public function isProvisioningPending(): bool
+    {
+        return $this->provisioning_status === self::PROVISIONING_PENDING;
+    }
 
-public function isProvisioning(): bool
-{
-    return $this->provisioning_status === self::PROVISIONING;
-}
+    public function isProvisioning(): bool
+    {
+        return $this->provisioning_status === self::PROVISIONING;
+    }
 
-public function isProvisioned(): bool
-{
-    return $this->provisioning_status === self::PROVISIONING_READY;
-}
+    public function isProvisioned(): bool
+    {
+        return $this->provisioning_status === self::PROVISIONING_READY;
+    }
 
-public function provisioningFailed(): bool
-{
-    return $this->provisioning_status === self::PROVISIONING_FAILED;
-}
+    public function provisioningFailed(): bool
+    {
+        return $this->provisioning_status === self::PROVISIONING_FAILED;
+    }
 
-public function isActive(): bool
-{
-    return $this->status === self::STATUS_ACTIVE;
-}
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
 
-public function isInactive(): bool
-{
-    return $this->status === self::STATUS_INACTIVE;
-}
+    public function isInactive(): bool
+    {
+        return $this->status === self::STATUS_INACTIVE;
+    }
 
-public function isSuspended(): bool
-{
-    return $this->status === self::STATUS_SUSPENDED;
-}
-public function markAsProvisioning(): void
-{
-    $this->update([
-        'provisioning_status' => self::PROVISIONING,
-    ]);
-}
+    public function isSuspended(): bool
+    {
+        return $this->status === self::STATUS_SUSPENDED;
+    }
 
-public function markAsReady(): void
-{
-    $this->update([
-        'provisioning_status' => self::PROVISIONING_READY,
-        'status' => self::STATUS_ACTIVE,
-        'activated_at' => now(),
-        'deactivated_at' => null,
-        'deactivation_reason' => null,
-    ]);
-}
+    public function markAsProvisioning(): void
+    {
+        $this->update([
+            'provisioning_status' => self::PROVISIONING,
+        ]);
+    }
 
-public function markAsFailed(?string $reason = null): void
-{
-    $this->update([
-        'provisioning_status' => self::PROVISIONING_FAILED,
-        'status' => self::STATUS_INACTIVE,
-        'deactivation_reason' => $reason,
-    ]);
-}
+    public function markAsReady(): void
+    {
+        $this->update([
+            'provisioning_status' => self::PROVISIONING_READY,
+            'status' => self::STATUS_ACTIVE,
+            'activated_at' => now(),
+            'deactivated_at' => null,
+            'deactivation_reason' => null,
+        ]);
+    }
 
-public function activate(): void
-{
-    $this->update([
-        'status' => self::STATUS_ACTIVE,
-        'activated_at' => now(),
-        'deactivated_at' => null,
-        'deactivation_reason' => null,
-    ]);
-}
+    public function markAsFailed(?string $reason = null): void
+    {
+        $this->update([
+            'provisioning_status' => self::PROVISIONING_FAILED,
+            'status' => self::STATUS_INACTIVE,
+            'deactivation_reason' => $reason,
+        ]);
+    }
 
-public function deactivate(?string $reason = null): void
-{
-    $this->update([
-        'status' => self::STATUS_INACTIVE,
-        'deactivated_at' => now(),
-        'deactivation_reason' => $reason,
-    ]);
-}
+    public function activate(): void
+    {
+        $this->update([
+            'status' => self::STATUS_ACTIVE,
+            'activated_at' => now(),
+            'deactivated_at' => null,
+            'deactivation_reason' => null,
+        ]);
+    }
 
-public function suspend(?string $reason = null): void
-{
-    $this->update([
-        'status' => self::STATUS_SUSPENDED,
-        'deactivated_at' => now(),
-        'deactivation_reason' => $reason,
-    ]);
-}
-public function scopeActive($query)
-{
-    return $query->where('status', self::STATUS_ACTIVE);
-}
+    public function deactivate(?string $reason = null): void
+    {
+        $this->update([
+            'status' => self::STATUS_INACTIVE,
+            'deactivated_at' => now(),
+            'deactivation_reason' => $reason,
+        ]);
+    }
 
-public function scopeInactive($query)
-{
-    return $query->where('status', self::STATUS_INACTIVE);
-}
+    public function suspend(?string $reason = null): void
+    {
+        $this->update([
+            'status' => self::STATUS_SUSPENDED,
+            'deactivated_at' => now(),
+            'deactivation_reason' => $reason,
+        ]);
+    }
 
-public function scopeSuspended($query)
-{
-    return $query->where('status', self::STATUS_SUSPENDED);
-}
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
+    }
 
-public function scopeReady($query)
-{
-    return $query->where(
-        'provisioning_status',
-        self::PROVISIONING_READY
-    );
-}
+    public function scopeInactive($query)
+    {
+        return $query->where('status', self::STATUS_INACTIVE);
+    }
+
+    public function scopeSuspended($query)
+    {
+        return $query->where('status', self::STATUS_SUSPENDED);
+    }
+
+    public function scopeReady($query)
+    {
+        return $query->where(
+            'provisioning_status',
+            self::PROVISIONING_READY
+        );
+    }
+
+    public function markProvisioningAsFailed(?string $reason = null): void
+    {
+        $this->update([
+            'provisioning_status' => self::PROVISIONING_FAILED,
+            'status' => self::STATUS_INACTIVE,
+            'deactivation_reason' => $reason,
+        ]);
+    }
 }
