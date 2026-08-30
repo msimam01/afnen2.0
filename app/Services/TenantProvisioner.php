@@ -20,6 +20,10 @@ class TenantProvisioner
             // Provision roles and permissions
             TenantRoleProvisioner::provision();
 
+            // Provision initial tenant administrator
+            $adminCredentials = TenantAdminProvisioner::getTestCredentials();
+            TenantAdminProvisioner::provision($adminCredentials);
+
             Log::info('[TenantProvisioner] Tenant initialized successfully', [
                 'tenant_id' => $tenant->id,
             ]);

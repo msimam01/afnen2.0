@@ -3,7 +3,6 @@ import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -19,10 +18,10 @@ interface LoginForm {
 
 interface LoginProps {
     status?: string;
-    canResetPassword: boolean;
+    tenantName?: string;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function TenantLogin({ status, tenantName }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
         email: '',
         password: '',
@@ -31,21 +30,26 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('login'), {
+        post(route('tenant.login'), {
             onFinish: () => reset('password'),
         });
     };
 
     return (
-        <AuthLayout title="AFNEN Central Administration" description="Log in to manage AFNEN operations across all organizations">
-            <Head title="Central Administration Login" />
+        <AuthLayout
+            title={tenantName || 'Sign in to your organization'}
+            description={`Sign in to your ${tenantName || 'organization'} account`}
+        >
+            <Head title="Organization Login" />
 
             <div className="mb-8 text-center">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AFNEN</h2>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Agricultural Finance Network</p>
-                <div className="mt-4 rounded-md bg-blue-50 dark:bg-blue-900/20 px-4 py-2">
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Central Administration</p>
-                </div>
+                {tenantName && (
+                    <div className="mt-4 rounded-md bg-green-50 dark:bg-green-900/20 px-4 py-2">
+                        <p className="text-sm font-medium text-green-700 dark:text-green-300">{tenantName}</p>
+                    </div>
+                )}
             </div>
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
@@ -61,20 +65,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             autoComplete="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="admin@afnen.com"
+                            placeholder="email@example.com"
                         />
                         <InputError message={errors.email} />
                     </div>
 
                     <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
-                                    Forgot password?
-                                </TextLink>
-                            )}
-                        </div>
+                        <Label htmlFor="password">Password</Label>
                         <Input
                             id="password"
                             type="password"
@@ -95,7 +92,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                        Sign in to Central Administration
+                        Sign in to your organization
                     </Button>
                 </div>
             </form>

@@ -38,13 +38,29 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
-        return array_merge(parent::share($request), [
+        $sharedData = [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
             ],
-        ]);
+        ];
+
+        // Add tenant information if we're in a tenant context
+        if (tenancy()->initialized) {
+            $sharedData['tenant'] = [
+                'id' => tenant('id'),
+                'name' => tenant('data.name'),
+            ];
+
+            // Add user permissions if authenticated
+            if ($request->user()) {
+                $sharedData['auth']['user']['role'] = $request->user()->getRoleNames()->first();
+                $sharedData['auth']['user']['permissions'] = $request->user()->getAllPermissions()->pluck('name');
+            }
+        }
+
+        return $sharedData;
     }
 }

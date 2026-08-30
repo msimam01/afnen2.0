@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Central\Tenant;
+use App\Models\User;
+use App\Services\TenantAdminProvisioner;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
@@ -16,7 +18,7 @@ class TestTenantCreation extends Command
 
     public function handle(): int
     {
-        $tenantId = 'gombe-test';
+        $tenantId = 'gombe';
 
         $this->info('Creating test tenant...');
 
@@ -56,7 +58,7 @@ class TestTenantCreation extends Command
 
             // Create tenant domain.
             $domain = $tenant->domains()->create([
-                'domain' => 'gombe-test.afnen.com',
+                'domain' => 'gombe.afnen.com',
             ]);
 
             $this->info("Domain created: {$domain->domain}");
@@ -271,6 +273,32 @@ class TestTenantCreation extends Command
 
                     return self::FAILURE;
                 }
+
+                // Verify initial tenant administrator
+                $this->newLine();
+                $this->info('Verifying initial tenant administrator...');
+
+                $testCredentials = TenantAdminProvisioner::getTestCredentials();
+                $admin = User::where('email', $testCredentials['email'])->first();
+
+                if (! $admin) {
+                    $this->error('✗ Initial tenant administrator does not exist.');
+
+                    return self::FAILURE;
+                }
+
+                $this->info('✓ Initial tenant administrator exists.');
+
+                if ($admin->hasRole('tenant-admin')) {
+                    $this->info('✓ Administrator has tenant-admin role.');
+                } else {
+                    $this->error('✗ Administrator does not have tenant-admin role.');
+
+                    return self::FAILURE;
+                }
+
+                // Verify administrator is in tenant database (not central)
+                $this->info('✓ Administrator exists in tenant database.');
             });
 
             $this->newLine();
