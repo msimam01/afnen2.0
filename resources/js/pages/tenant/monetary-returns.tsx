@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
 import TenantSidebarLayout from '@/layouts/tenant/tenant-sidebar-layout';
 import { PageContainer } from '@/components/page-container';
@@ -9,24 +9,24 @@ import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: route('tenant.dashboard') },
-    { title: 'Settings', href: route('tenant.settings') },
+    { title: 'Monetary Returns', href: route('tenant.monetary-returns') },
 ];
 
-export default function Settings() {
+export default function MonetaryReturns() {
     return (
         <TenantSidebarLayout breadcrumbs={breadcrumbs}>
-            <Head title="Settings" />
+            <Head title="Monetary Returns" />
 
             <PageContainer>
                 <PageHeader
-                    title="Settings"
-                    description="Configure your organization's preferences and settings"
+                    title="Monetary Returns"
+                    description="Manage monetary returns and repayments from farmers"
                 />
 
                 <EmptyState
-                    icon={SettingsIcon}
-                    title="Settings configuration coming soon"
-                    description="Organization settings, user management, and configuration options will be available in upcoming updates."
+                    icon={DollarSign}
+                    title="Monetary Returns Module Under Development"
+                    description="This module will allow you to track and manage monetary returns and repayments from farmers. Coming in upcoming updates."
                 />
             </PageContainer>
         </TenantSidebarLayout>

@@ -1,6 +1,5 @@
 import { Building2, Layers, Wheat, BarChart3, Plus } from 'lucide-react';
 
-import CentralSidebarLayout from '@/layouts/central/central-sidebar-layout';
 import { PageContainer } from '@/components/page-container';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -22,7 +22,7 @@ export default function Dashboard() {
     const { auth } = usePage().props as any;
 
     return (
-        <CentralSidebarLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Central Dashboard" />
 
             <PageContainer>
@@ -63,25 +63,25 @@ export default function Dashboard() {
                 {/* Quick Actions */}
                 <SectionCard title="Quick Actions" description="Frequently used actions">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Link href={route('central.tenants')}>
+                        <Link href="/tenants">
                             <Button variant="outline" className="w-full justify-start">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Tenant
                             </Button>
                         </Link>
-                        <Link href={route('central.seasons')}>
+                        <Link href="/seasons">
                             <Button variant="outline" className="w-full justify-start">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create Season
                             </Button>
                         </Link>
-                        <Link href={route('central.commodities')}>
+                        <Link href="/commodities">
                             <Button variant="outline" className="w-full justify-start">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Commodity
                             </Button>
                         </Link>
-                        <Link href={route('central.allocations')}>
+                        <Link href="/allocations">
                             <Button variant="outline" className="w-full justify-start">
                                 <Plus className="mr-2 h-4 w-4" />
                                 Allocate Stock
@@ -98,6 +98,6 @@ export default function Dashboard() {
                     />
                 </SectionCard>
             </PageContainer>
-        </CentralSidebarLayout>
+        </AppLayout>
     );
 }

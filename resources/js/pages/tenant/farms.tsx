@@ -9,8 +9,8 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Farms', href: '/farms' },
+    { title: 'Dashboard', href: route('tenant.dashboard') },
+    { title: 'Farms', href: route('tenant.farms') },
 ];
 
 export default function Farms() {

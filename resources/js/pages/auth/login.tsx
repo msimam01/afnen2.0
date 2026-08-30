@@ -37,16 +37,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="AFNEN Central Administration" description="Log in to manage AFNEN operations across all organizations">
+        <AuthLayout 
+            title="AFNEN" 
+            subtitle="Agricultural Finance Network"
+            badge="Central Administration"
+            description="Log in to manage AFNEN operations across all organizations"
+        >
             <Head title="Central Administration Login" />
-
-            <div className="mb-8 text-center">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AFNEN</h2>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Agricultural Finance Network</p>
-                <div className="mt-4 rounded-md bg-blue-50 dark:bg-blue-900/20 px-4 py-2">
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Central Administration</p>
-                </div>
-            </div>
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
@@ -95,7 +92,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                        Sign in to Central Administration
+                        Sign in
                     </Button>
                 </div>
             </form>

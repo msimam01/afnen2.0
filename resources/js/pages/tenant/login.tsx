@@ -37,20 +37,12 @@ export default function TenantLogin({ status, tenantName }: LoginProps) {
 
     return (
         <AuthLayout
-            title={tenantName || 'Sign in to your organization'}
-            description={`Sign in to your ${tenantName || 'organization'} account`}
+            title="AFNEN"
+            subtitle="Agricultural Finance Network"
+            badge={tenantName}
+            description={`Welcome back. Sign in to your ${tenantName || 'organization'} account.`}
         >
             <Head title="Organization Login" />
-
-            <div className="mb-8 text-center">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AFNEN</h2>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Agricultural Finance Network</p>
-                {tenantName && (
-                    <div className="mt-4 rounded-md bg-green-50 dark:bg-green-900/20 px-4 py-2">
-                        <p className="text-sm font-medium text-green-700 dark:text-green-300">{tenantName}</p>
-                    </div>
-                )}
-            </div>
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
@@ -92,7 +84,7 @@ export default function TenantLogin({ status, tenantName }: LoginProps) {
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
                         {processing && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                        Sign in to your organization
+                        Sign in
                     </Button>
                 </div>
             </form>

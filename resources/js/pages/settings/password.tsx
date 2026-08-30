@@ -13,7 +13,11 @@ import { Label } from '@/components/ui/label';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Password settings',
+        title: 'Dashboard',
+        href: '/dashboard',
+    },
+    {
+        title: 'Password',
         href: '/settings/password',
     },
 ];
@@ -50,7 +54,7 @@ export default function Password() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Profile settings" />
+            <Head title="Password" />
 
             <SettingsLayout>
                 <div className="space-y-6">

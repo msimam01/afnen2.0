@@ -1,12 +1,12 @@
 import { BarChart3, Plus } from 'lucide-react';
 
-import CentralSidebarLayout from '@/layouts/central/central-sidebar-layout';
 import { PageContainer } from '@/components/page-container';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -15,7 +15,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Allocations() {
     return (
-        <CentralSidebarLayout breadcrumbs={breadcrumbs}>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Stock & Allocations" />
 
             <PageContainer>
@@ -42,6 +42,6 @@ export default function Allocations() {
                     }
                 />
             </PageContainer>
-        </CentralSidebarLayout>
+        </AppLayout>
     );
 }

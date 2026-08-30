@@ -4,56 +4,9 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Building2, Layers, Wheat, BarChart3, TrendingUp, Settings, LayoutGrid } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import AppLogo from './app-logo';
-
-const centralNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        url: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Tenants',
-        url: '/tenants',
-        icon: Building2,
-    },
-    {
-        title: 'Commodities',
-        url: '/commodities',
-        icon: Wheat,
-    },
-    {
-        title: 'Commodity Categories',
-        url: '/commodity-categories',
-        icon: Layers,
-    },
-    {
-        title: 'Seasons',
-        url: '/seasons',
-        icon: Layers,
-    },
-    {
-        title: 'Stock & Allocations',
-        url: '/allocations',
-        icon: BarChart3,
-    },
-    {
-        title: 'Market Prices',
-        url: '/market-prices',
-        icon: TrendingUp,
-    },
-    {
-        title: 'Reports',
-        url: '/reports',
-        icon: BarChart3,
-    },
-    {
-        title: 'Settings',
-        url: '/settings',
-        icon: Settings,
-    },
-];
+import { centralNavigation } from '@/config/navigation';
 
 const footerNavItems: NavItem[] = [
     {
@@ -79,7 +32,7 @@ export function CentralSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={centralNavItems} />
+                <NavMain items={centralNavigation.items} />
             </SidebarContent>
 
             <SidebarFooter>

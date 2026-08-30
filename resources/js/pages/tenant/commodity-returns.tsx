@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Wheat } from 'lucide-react';
 
 import TenantSidebarLayout from '@/layouts/tenant/tenant-sidebar-layout';
 import { PageContainer } from '@/components/page-container';
@@ -9,24 +9,24 @@ import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: route('tenant.dashboard') },
-    { title: 'Settings', href: route('tenant.settings') },
+    { title: 'Commodity Returns', href: route('tenant.commodity-returns') },
 ];
 
-export default function Settings() {
+export default function CommodityReturns() {
     return (
         <TenantSidebarLayout breadcrumbs={breadcrumbs}>
-            <Head title="Settings" />
+            <Head title="Commodity Returns" />
 
             <PageContainer>
                 <PageHeader
-                    title="Settings"
-                    description="Configure your organization's preferences and settings"
+                    title="Commodity Returns"
+                    description="Manage commodity returns from farmers"
                 />
 
                 <EmptyState
-                    icon={SettingsIcon}
-                    title="Settings configuration coming soon"
-                    description="Organization settings, user management, and configuration options will be available in upcoming updates."
+                    icon={Wheat}
+                    title="Commodity Returns Module Under Development"
+                    description="This module will allow you to track and manage commodity returns from farmers. Coming in upcoming updates."
                 />
             </PageContainer>
         </TenantSidebarLayout>

@@ -6,9 +6,11 @@ interface AuthLayoutProps {
     name?: string;
     title?: string;
     description?: string;
+    subtitle?: string;
+    badge?: string;
 }
 
-export default function AuthSimpleLayout({ children, title, description }: AuthLayoutProps) {
+export default function AuthSimpleLayout({ children, title, description, subtitle, badge }: AuthLayoutProps) {
     // Check if home route exists, otherwise render logo without link
     const hasHomeRoute = (window as any).route?.has?.('home') || false;
 
@@ -35,6 +37,12 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
 
                         <div className="space-y-2 text-center">
                             <h1 className="text-xl font-medium">{title}</h1>
+                            {subtitle && <p className="text-sm text-gray-600 dark:text-gray-400">{subtitle}</p>}
+                            {badge && (
+                                <div className="mt-2 rounded-md bg-blue-50 dark:bg-blue-900/20 px-4 py-2">
+                                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{badge}</p>
+                                </div>
+                            )}
                             <p className="text-muted-foreground text-center text-sm">{description}</p>
                         </div>
                     </div>

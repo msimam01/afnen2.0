@@ -78,6 +78,14 @@ Route::middleware([
             return inertia('tenant/reports');
         })->name('tenant.reports');
 
+        Route::get('commodity-returns', function () {
+            return inertia('tenant/commodity-returns');
+        })->name('tenant.commodity-returns');
+
+        Route::get('monetary-returns', function () {
+            return inertia('tenant/monetary-returns');
+        })->name('tenant.monetary-returns');
+
         Route::get('settings', function () {
             return inertia('tenant/settings');
         })->name('tenant.settings');

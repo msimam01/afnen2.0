@@ -21,7 +21,7 @@ interface DashboardProps {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
-        href: '/dashboard',
+        href: route('tenant.dashboard'),
     },
 ];
 
