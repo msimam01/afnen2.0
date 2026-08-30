@@ -47,6 +47,9 @@ class TestTenantCreation extends Command
                 'data' => [
                     'name' => 'Gombe Test Farmers Association',
                     'description' => 'Temporary tenant used for testing AFNEN 2.0',
+                    'admin_name' => 'Test Administrator',
+                    'admin_email' => 'admin@afnen.test',
+                    'temp_password' => 'password', // Test password for automated testing
                 ],
 
                 'provisioning_status' => Tenant::PROVISIONING_PENDING,

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class TenantAdminProvisioner
 {
@@ -58,5 +59,13 @@ class TenantAdminProvisioner
             'email' => 'admin@afnen.test',
             'password' => 'password',
         ];
+    }
+
+    /**
+     * Generate a secure random temporary password for production tenant administrators.
+     */
+    public static function generateSecurePassword(): string
+    {
+        return Str::random(16);
     }
 }

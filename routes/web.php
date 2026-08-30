@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Central\TenantController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -27,10 +28,17 @@ Route::middleware(['web'])->group(function () {
             return Inertia::render('dashboard');
         })->name('dashboard');
 
-        // Central module placeholder routes
-        Route::get('tenants', function () {
-            return Inertia::render('central/tenants');
-        })->name('central.tenants');
+        // Central tenant management routes
+        Route::resource('tenants', TenantController::class)
+            ->names([
+                'index' => 'tenants.index',
+                'create' => 'tenants.create',
+                'store' => 'tenants.store',
+                'show' => 'tenants.show',
+                'edit' => 'tenants.edit',
+                'update' => 'tenants.update',
+                'destroy' => 'tenants.destroy',
+            ]);
 
         Route::get('commodities', function () {
             return Inertia::render('central/commodities');
