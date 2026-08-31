@@ -10,11 +10,6 @@ import { Separator } from '@/components/ui/separator';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Tenants', href: '/tenants' },
-];
-
 interface Tenant {
     id: string;
     data: {
@@ -40,6 +35,12 @@ interface Props {
 }
 
 export default function TenantShow({ tenant, temp_password }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Tenants', href: '/tenants' },
+        { title: tenant.data?.name || tenant.id, href: `/tenants/${tenant.id}` },
+    ];
+
     const getStatusBadge = (status: string) => {
         const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
             active: 'default',

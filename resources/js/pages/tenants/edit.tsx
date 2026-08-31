@@ -11,11 +11,6 @@ import InputError from '@/components/input-error';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Tenants', href: '/tenants' },
-];
-
 interface Tenant {
     id: string;
     data: {
@@ -37,6 +32,13 @@ interface Props {
 }
 
 export default function TenantEdit({ tenant }: Props) {
+    const breadcrumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: '/dashboard' },
+        { title: 'Tenants', href: '/tenants' },
+        { title: tenant.data?.name || tenant.id, href: `/tenants/${tenant.id}` },
+        { title: 'Edit', href: `/tenants/${tenant.id}/edit` },
+    ];
+
     const { data, setData, put, processing, errors } = useForm({
         name: tenant.data?.name || '',
         description: tenant.data?.description || '',

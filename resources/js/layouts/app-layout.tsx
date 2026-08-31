@@ -10,9 +10,11 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, breadcrumbs = [] }: AppLayoutProps) {
     const { tenant } = usePage().props as any;
+    const url = window.location.pathname;
 
-    // Detect if we're in tenant context by checking if tenant data exists
-    const isTenantContext = !!tenant;
+    // Detect if we're in tenant context by checking if we're accessing a tenant domain
+    // Central admin pages like /tenants/{id} should still use central sidebar even if they have tenant data
+    const isTenantContext = tenant && !url.startsWith('/tenants/');
 
     if (isTenantContext) {
         return <TenantSidebarLayout breadcrumbs={breadcrumbs}>{children}</TenantSidebarLayout>;
