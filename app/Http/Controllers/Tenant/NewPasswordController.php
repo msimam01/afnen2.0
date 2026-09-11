@@ -24,7 +24,7 @@ class NewPasswordController extends Controller
         $tenantName = tenant('data.name') ?? 'Tenant';
 
         return Inertia::render('tenant/reset-password', [
-            'email' => $request->email,
+            'email' => $request->query('email'),
             'token' => $request->route('token'),
             'tenantName' => $tenantName,
         ]);
