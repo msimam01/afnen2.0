@@ -33,6 +33,16 @@ class ProvisionTenantJob implements ShouldQueue
             'status' => $tenant->status,
         ]);
 
+        // Idempotency guard: if the tenant is already fully provisioned we do not
+        // re-create roles/users or touch the administrator's credentials.
+        if ($tenant->isProvisioned()) {
+            Log::info('[ProvisionTenantJob] Tenant is already provisioned. Skipping duplicate run.', [
+                'tenant_id' => $tenant->id,
+            ]);
+
+            return;
+        }
+
         $tenant->markAsProvisioning();
 
         try {

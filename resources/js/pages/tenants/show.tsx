@@ -15,8 +15,6 @@ interface Tenant {
     data: {
         name: string;
         description?: string;
-        admin_name?: string;
-        admin_email?: string;
     };
     status: string;
     provisioning_status: string;
@@ -29,12 +27,18 @@ interface Tenant {
     }>;
 }
 
+interface PendingAdministrator {
+    name: string;
+    email: string;
+}
+
 interface Props {
     tenant: Tenant;
     temp_password?: string;
+    pending_administrator?: PendingAdministrator | null;
 }
 
-export default function TenantShow({ tenant, temp_password }: Props) {
+export default function TenantShow({ tenant, temp_password, pending_administrator }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Tenants', href: '/tenants' },
@@ -193,20 +197,33 @@ export default function TenantShow({ tenant, temp_password }: Props) {
                                 <CardDescription>First administrator account for this tenant</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Administrator Name</p>
-                                    <p className="text-base font-semibold">{tenant.data?.admin_name || '-'}</p>
-                                </div>
-                                <Separator />
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Administrator Email</p>
-                                    <p className="text-base font-semibold">{tenant.data?.admin_email || '-'}</p>
-                                </div>
+                                {pending_administrator ? (
+                                    <>
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">Administrator Name</p>
+                                            <p className="text-base font-semibold">{pending_administrator.name}</p>
+                                        </div>
+                                        <Separator />
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">Administrator Email</p>
+                                            <p className="text-base font-semibold">{pending_administrator.email}</p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        {tenant.provisioning_status === 'ready'
+                                            ? 'The initial administrator has been provisioned in the tenant database.'
+                                            : 'Administrator information is not available.'}
+                                    </p>
+                                )}
                                 <Separator />
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Role</p>
                                     <p className="text-base font-semibold">Tenant Administrator</p>
                                 </div>
+                                <p className="text-xs text-muted-foreground">
+                                    The administrator user is created inside the tenant database. Passwords are never stored or displayed on this page.
+                                </p>
                             </CardContent>
                         </Card>
 
@@ -222,7 +239,7 @@ export default function TenantShow({ tenant, temp_password }: Props) {
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
                                         <p className="text-sm font-medium text-muted-foreground">Administrator Email</p>
-                                        <p className="text-base font-semibold">{tenant.data?.admin_email || '-'}</p>
+                                        <p className="text-base font-semibold">{pending_administrator?.email || '-'}</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-2">

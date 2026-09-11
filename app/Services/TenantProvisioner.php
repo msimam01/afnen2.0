@@ -2,15 +2,51 @@
 
 namespace App\Services;
 
+use App\Models\Central\PendingTenantAdministrator;
 use App\Models\Central\Tenant;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class TenantProvisioner
 {
+    /**
+     * Provision the tenant database (roles, permissions and the initial
+     * administrator).
+     *
+     * The administrator credentials are read from the CENTRAL
+     * `pending_tenant_administrators` table BEFORE the tenant context is
+     * initialized. There is NO fallback to test credentials: if the pending
+     * administrator data is missing, provisioning fails loudly and the tenant
+     * is left for manual/automatic retry.
+     */
     public static function provision(Tenant $tenant): void
     {
         Log::info('[TenantProvisioner] Provisioning tenant', [
             'tenant_id' => $tenant->id,
+        ]);
+
+        // Resolve the pending administrator on the central connection BEFORE
+        // initializing tenancy (after initialize(), the default database
+        // context belongs to the tenant).
+        $pendingAdmin = PendingTenantAdministrator::query()
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        if ($pendingAdmin === null) {
+            throw new RuntimeException(
+                "[TenantProvisioner] Missing tenant administrator provisioning data for tenant [{$tenant->id}]. Provisioning aborted. A pending administrator record must be created with the tenant."
+            );
+        }
+
+        $adminCredentials = [
+            'name' => $pendingAdmin->name,
+            'email' => $pendingAdmin->email,
+            'password' => $pendingAdmin->password, // decrypted by the `encrypted` cast; TenantAdminProvisioner hashes it
+        ];
+
+        Log::info('[TenantProvisioner] Administrator data resolved', [
+            'tenant_id' => $tenant->id,
+            'admin_email' => $adminCredentials['email'],
         ]);
 
         // Initialize the tenant database/context.
@@ -20,26 +56,12 @@ class TenantProvisioner
             // Provision roles and permissions
             TenantRoleProvisioner::provision();
 
-            // Provision initial tenant administrator
-            // Use provided admin credentials or fall back to test credentials
-            if (isset($tenant->data['admin_email']) && ! empty($tenant->data['admin_email'])) {
-                $adminName = $tenant->data['admin_name'] ?? 'Administrator';
-                $adminEmail = $tenant->data['admin_email'];
-
-                // Use the temporary password if it exists (from web UI), otherwise generate new one
-                $adminPassword = $tenant->data['temp_password'] ?? TenantAdminProvisioner::generateSecurePassword();
-
-                $adminCredentials = [
-                    'name' => $adminName,
-                    'email' => $adminEmail,
-                    'password' => $adminPassword,
-                ];
-            } else {
-                // Fall back to test credentials for backward compatibility with test command
-                $adminCredentials = TenantAdminProvisioner::getTestCredentials();
-            }
-
+            // Provision the exact tenant administrator supplied at creation
             TenantAdminProvisioner::provision($adminCredentials);
+
+            // Only after successful administrator creation and role
+            // assignment, remove the temporary central credential record.
+            $pendingAdmin->delete();
 
             Log::info('[TenantProvisioner] Tenant initialized successfully', [
                 'tenant_id' => $tenant->id,

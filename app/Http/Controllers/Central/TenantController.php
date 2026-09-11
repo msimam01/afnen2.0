@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Central\StoreTenantRequest;
 use App\Http\Requests\Central\UpdateTenantRequest;
 use App\Jobs\ProvisionTenantJob;
+use App\Models\Central\PendingTenantAdministrator;
 use App\Models\Central\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Models\Domain;
@@ -55,42 +57,87 @@ class TenantController extends Controller
         }
 
         try {
-            // Generate temporary password for the administrator
-            $tempPassword = Str::random(16);
+            // Securely generate the temporary administrator password. The plaintext
+            // value is shown to the central administrator exactly once (via the
+            // session flash on the redirect). It is persisted encrypted in the
+            // pending_tenant_administrators table until provisioning completes,
+            // and only ever stored hashed in the tenant database.
+            $temporaryPassword = Str::random(16);
 
+            $tenant = null;
+
+            // Organization metadata only — administrator credentials never live
+            // on the tenants table or inside `data`.
+            //
+            // NOTE: Tenant::create() must NOT run inside a DB::transaction().
+            // It fires the synchronous TenantCreated pipeline (CREATE DATABASE
+            // + tenant migrations). DDL statements make MySQL implicitly commit
+            // the surrounding central transaction, which aborts the later
+            // commit with "There is no active transaction".
             $tenant = Tenant::create([
                 'id' => $validated['slug'],
 
-                'data' => [
-                    'name' => $validated['name'],
-                    'description' => $validated['description'] ?? null,
-                    'admin_name' => $validated['admin_name'],
-                    'admin_email' => $validated['admin_email'],
-                    'temp_password' => $tempPassword, // Temporary password for one-time display
-                    'temp_password_shown' => false, // Flag to track if password was shown
-                    'created_by' => auth()->id(),
-                ],
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+
+                'created_by' => (string) auth()->id(),
 
                 'provisioning_status' => Tenant::PROVISIONING_PENDING,
 
                 'status' => Tenant::STATUS_INACTIVE,
             ]);
 
-            $tenant->domains()->create([
-                'domain' => $domain,
+            // Domain + temporary encrypted provisioning input. These are plain
+            // DML statements on the central connection, so a transaction is
+            // safe here. The provisioner deletes the pending administrator
+            // record once the administrator exists in the tenant database.
+            DB::transaction(function () use ($tenant, $domain, $validated, $temporaryPassword) {
+                $tenant->domains()->create([
+                    'domain' => $domain,
+                ]);
+
+                PendingTenantAdministrator::create([
+                    'tenant_id' => $tenant->id,
+                    'name' => $validated['admin_name'],
+                    'email' => $validated['admin_email'],
+                    'password' => $temporaryPassword,
+                ]);
+            });
+
+            Log::info('[TenantController] Tenant administrator data received', [
+                'tenant_id' => $tenant->id,
+                'admin_name' => $validated['admin_name'],
+                'admin_email' => $validated['admin_email'],
             ]);
 
-            ProvisionTenantJob::dispatch($tenant);
+            // Dispatch exactly ONE provisioning job. It starts only after the
+            // central transaction (tenant + domain + pending administrator)
+            // has committed.
+            ProvisionTenantJob::dispatch($tenant)->afterCommit();
 
             return redirect()
                 ->route('tenants.show', $tenant)
-                ->with('success', 'Tenant created successfully. Provisioning has started.');
+                ->with('success', 'Tenant created successfully. Provisioning has started.')
+                ->with('temp_password', $temporaryPassword);
 
         } catch (\Throwable $e) {
             Log::error('Tenant creation failed', [
                 'tenant_id' => $validated['slug'],
                 'error' => $e->getMessage(),
             ]);
+
+            // Best-effort cleanup of a partially created tenant. Deleting the
+            // tenant also drops its database via the TenantDeleted pipeline.
+            if ($tenant !== null) {
+                try {
+                    Tenant::find($tenant->id)?->delete();
+                } catch (\Throwable $cleanup) {
+                    Log::error('Tenant cleanup after failed creation failed', [
+                        'tenant_id' => $tenant->id,
+                        'error' => $cleanup->getMessage(),
+                    ]);
+                }
+            }
 
             return back()
                 ->withErrors([
@@ -104,23 +151,23 @@ class TenantController extends Controller
     {
         $tenant->load('domains');
 
-        // Get temporary password if available and not yet shown
-        $tempPassword = null;
-        if (isset($tenant->data['temp_password']) && ! ($tenant->data['temp_password_shown'] ?? false)) {
-            $tempPassword = $tenant->data['temp_password'];
+        // One-time temporary password (only available on the redirect immediately
+        // following creation, then removed from the session).
+        $temporaryPassword = session()->pull('temp_password');
 
-            // Mark password as shown and clear it from tenant data
-            $tenant->update([
-                'data' => array_merge($tenant->data, [
-                    'temp_password_shown' => true,
-                    'temp_password' => null, // Clear the password after showing
-                ]),
-            ]);
-        }
+        // The pending administrator record only exists until provisioning
+        // succeeds; its name/email are non-secret and safe to display.
+        $pendingAdministrator = PendingTenantAdministrator::query()
+            ->where('tenant_id', $tenant->id)
+            ->first();
 
         return inertia('tenants/show', [
             'tenant' => $tenant,
-            'temp_password' => $tempPassword,
+            'temp_password' => $temporaryPassword,
+            'pending_administrator' => $pendingAdministrator ? [
+                'name' => $pendingAdministrator->name,
+                'email' => $pendingAdministrator->email,
+            ] : null,
         ]);
     }
 
@@ -128,8 +175,18 @@ class TenantController extends Controller
     {
         $tenant->load('domains');
 
+        // Name/email of the not-yet-provisioned administrator are non-secret
+        // and safe to display; nothing is shown once provisioning completed.
+        $pendingAdministrator = PendingTenantAdministrator::query()
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
         return inertia('tenants/edit', [
             'tenant' => $tenant,
+            'pending_administrator' => $pendingAdministrator ? [
+                'name' => $pendingAdministrator->name,
+                'email' => $pendingAdministrator->email,
+            ] : null,
         ]);
     }
 
@@ -138,12 +195,9 @@ class TenantController extends Controller
         $validated = $request->validated();
 
         try {
-            $existingData = $tenant->data ?? [];
             $tenant->update([
-                'data' => array_merge($existingData, [
-                    'name' => $validated['name'],
-                    'description' => $validated['description'] ?? null,
-                ]),
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
             ]);
 
             return redirect()

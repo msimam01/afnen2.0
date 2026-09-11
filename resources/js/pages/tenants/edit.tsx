@@ -16,8 +16,6 @@ interface Tenant {
     data: {
         name: string;
         description?: string;
-        admin_name?: string;
-        admin_email?: string;
     };
     status: string;
     provisioning_status: string;
@@ -27,11 +25,17 @@ interface Tenant {
     }>;
 }
 
-interface Props {
-    tenant: Tenant;
+interface PendingAdministrator {
+    name: string;
+    email: string;
 }
 
-export default function TenantEdit({ tenant }: Props) {
+interface Props {
+    tenant: Tenant;
+    pending_administrator?: PendingAdministrator | null;
+}
+
+export default function TenantEdit({ tenant, pending_administrator }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/dashboard' },
         { title: 'Tenants', href: '/tenants' },
@@ -144,18 +148,31 @@ export default function TenantEdit({ tenant }: Props) {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="admin_email">Administrator Email</Label>
-                                        <div className="relative">
+                                        {pending_administrator ? (
+                                            <div className="relative">
+                                                <Input
+                                                    id="admin_email"
+                                                    type="email"
+                                                    value={pending_administrator.email}
+                                                    disabled
+                                                    className="bg-muted"
+                                                />
+                                                <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            </div>
+                                        ) : (
                                             <Input
                                                 id="admin_email"
                                                 type="email"
-                                                value={tenant.data?.admin_email || ''}
+                                                value=""
                                                 disabled
+                                                placeholder="Administrator already provisioned"
                                                 className="bg-muted"
                                             />
-                                            <Lock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        </div>
+                                        )}
                                         <p className="text-xs text-muted-foreground">
-                                            Administrator email cannot be changed
+                                            {pending_administrator
+                                                ? 'The administrator account will be created with this email once provisioning completes. It cannot be changed.'
+                                                : 'The administrator email is managed in the tenant application after provisioning.'}
                                         </p>
                                     </div>
                                 </CardContent>

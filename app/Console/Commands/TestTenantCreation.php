@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\ProvisionTenantJob;
+use App\Models\Central\PendingTenantAdministrator;
 use App\Models\Central\Tenant;
 use App\Models\User;
 use App\Services\TenantAdminProvisioner;
@@ -41,16 +43,15 @@ class TestTenantCreation extends Command
         }
 
         try {
+            // TEST PATH: this command explicitly supplies the test administrator
+            // credentials. The production UI path never uses getTestCredentials().
+            $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
             $tenant = Tenant::create([
                 'id' => $tenantId,
 
-                'data' => [
-                    'name' => 'Gombe Test Farmers Association',
-                    'description' => 'Temporary tenant used for testing AFNEN 2.0',
-                    'admin_name' => 'Test Administrator',
-                    'admin_email' => 'admin@afnen.test',
-                    'temp_password' => 'password', // Test password for automated testing
-                ],
+                'name' => 'Gombe Test Farmers Association',
+                'description' => 'Temporary tenant used for testing AFNEN 2.0',
 
                 'provisioning_status' => Tenant::PROVISIONING_PENDING,
 
@@ -65,6 +66,22 @@ class TestTenantCreation extends Command
             ]);
 
             $this->info("Domain created: {$domain->domain}");
+
+            // Create the temporary pending administrator record with the explicit
+            // test credentials (encrypted at rest, deleted after provisioning).
+            $pendingAdministrator = PendingTenantAdministrator::create([
+                'tenant_id' => $tenant->id,
+                'name' => $testCredentials['name'],
+                'email' => $testCredentials['email'],
+                'password' => $testCredentials['password'],
+            ]);
+
+            $this->info("Pending test administrator created: {$pendingAdministrator->email}");
+
+            // Provision the tenant. The tenant database is created and migrated by the
+            // tenancy event pipeline; this job provisions roles/permissions and the
+            // test administrator explicitly supplied above.
+            ProvisionTenantJob::dispatchSync($tenant);
 
             // Wait for provisioning to complete (max 30 seconds)
             $this->info('Waiting for provisioning to complete...');

@@ -13,6 +13,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     protected $fillable = [
         'id',
+        'name',
+        'description',
+        'created_by',
         'data',
         'provisioning_status',
         'status',
@@ -25,6 +28,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         'data' => 'array',
         'activated_at' => 'datetime',
         'deactivated_at' => 'datetime',
+        'created_by' => 'string',
     ];
 
     public const PROVISIONING_PENDING = 'pending';
@@ -41,14 +45,35 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
     public const STATUS_SUSPENDED = 'suspended';
 
-    public function getNameAttribute(): string
+    /**
+     * The columns that physically exist on the tenants table.
+     *
+     * Every other attribute is stored inside the `data` JSON column by the
+     * VirtualColumn concern (Stancl tenancy) and exposed back as a regular
+     * model attribute once the model has been loaded.
+     */
+    public static function getCustomColumns(): array
     {
-        return $this->data['name'] ?? 'Unknown';
+        return [
+            'id',
+            'created_at',
+            'updated_at',
+            'provisioning_status',
+            'status',
+            'activated_at',
+            'deactivated_at',
+            'deactivation_reason',
+        ];
     }
 
-    public function getDescriptionAttribute(): ?string
+    public function getNameAttribute($value = null): string
     {
-        return $this->data['description'] ?? null;
+        return $value ?? 'Unknown';
+    }
+
+    public function getDescriptionAttribute($value = null): ?string
+    {
+        return $value;
     }
 
     public function isProvisioningPending(): bool

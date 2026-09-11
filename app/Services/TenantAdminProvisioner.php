@@ -5,36 +5,79 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use RuntimeException;
 
 class TenantAdminProvisioner
 {
     /**
-     * Provision the initial tenant administrator.
+     * Provision the initial tenant administrator in the TENANT database.
      *
-     * This method must be called within a tenant context.
+     * This method must be called within an initialized tenant context.
+     *
+     * The administrator data must contain a name, an email and a plaintext
+     * `password` (resolved from the encrypted pending_tenant_administrators
+     * record). The plaintext password is only used to create the hashed
+     * `users.password` value and is NEVER logged and NEVER stored in
+     * plaintext. An existing administrator's password is NEVER overwritten.
      *
      * @param  array  $adminData  Administrator data (name, email, password)
      */
     public static function provision(array $adminData): void
     {
-        Log::info('[TenantAdminProvisioner] Provisioning tenant administrator');
+        $email = $adminData['email'] ?? null;
 
-        // Use firstOrCreate to ensure idempotency
+        if (empty($email)) {
+            throw new RuntimeException('[TenantAdminProvisioner] Administrator email is required for provisioning.');
+        }
+
+        $name = $adminData['name'] ?? null;
+
+        if (empty($name)) {
+            throw new RuntimeException('[TenantAdminProvisioner] Administrator name is required for provisioning.');
+        }
+
+        $password = $adminData['password'] ?? null;
+
+        if (empty($password)) {
+            throw new RuntimeException('[TenantAdminProvisioner] Administrator password is required for provisioning.');
+        }
+
+        Log::info('[TenantAdminProvisioner] Provisioning tenant administrator', [
+            'email' => $email,
+        ]);
+
+        // Hash the plaintext credential. This is the ONLY place the plaintext
+        // password exists, and it is never persisted or logged in plaintext.
+        $passwordHash = Hash::make($password);
+
+        // Use firstOrCreate to keep provisioning idempotent: if the
+        // administrator already exists (e.g. the job was retried), their
+        // password and attributes are NOT overwritten.
         $admin = User::firstOrCreate(
             [
-                'email' => $adminData['email'],
+                'email' => $email,
             ],
             [
-                'name' => $adminData['name'],
-                'password' => Hash::make($adminData['password']),
+                'name' => $name,
+                'password' => $passwordHash,
                 'email_verified_at' => now(),
             ]
         );
 
-        // Assign tenant-admin role
+        if ($admin->wasRecentlyCreated) {
+            Log::info('[TenantAdminProvisioner] Administrator created in tenant database', [
+                'email' => $admin->email,
+            ]);
+        } else {
+            Log::info('[TenantAdminProvisioner] Administrator already exists, credentials left untouched', [
+                'email' => $admin->email,
+            ]);
+        }
+
+        // Assign tenant-admin role (idempotent)
         if (! $admin->hasRole('tenant-admin')) {
             $admin->assignRole('tenant-admin');
+
             Log::info('[TenantAdminProvisioner] Assigned tenant-admin role to administrator', [
                 'email' => $admin->email,
             ]);
@@ -50,7 +93,10 @@ class TenantAdminProvisioner
     }
 
     /**
-     * Get default test administrator credentials for development/testing.
+     * Get default test administrator credentials for automated tests only.
+     *
+     * This MUST only be used by the test command (afnen:test-tenant) and test
+     * fixtures — never by the normal tenant creation/provisioning flow.
      */
     public static function getTestCredentials(): array
     {
@@ -59,13 +105,5 @@ class TenantAdminProvisioner
             'email' => 'admin@afnen.test',
             'password' => 'password',
         ];
-    }
-
-    /**
-     * Generate a secure random temporary password for production tenant administrators.
-     */
-    public static function generateSecurePassword(): string
-    {
-        return Str::random(16);
     }
 }
