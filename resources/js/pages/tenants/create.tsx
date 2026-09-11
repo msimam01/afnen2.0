@@ -1,6 +1,7 @@
 import { Building2, Globe, Loader2 } from 'lucide-react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { PageContainer } from '@/components/page-container';
 import { PageHeader } from '@/components/page-header';
@@ -39,6 +40,10 @@ export default function TenantCreate() {
         post('/tenants', {
             onSuccess: () => {
                 reset();
+                toast.success('Tenant created successfully');
+            },
+            onError: () => {
+                toast.error('Failed to create tenant');
             },
         });
     };

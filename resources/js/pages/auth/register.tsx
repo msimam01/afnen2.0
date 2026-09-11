@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
+import toast from 'react-hot-toast';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -28,6 +29,12 @@ export default function Register() {
         e.preventDefault();
         post(route('register'), {
             onFinish: () => reset('password', 'password_confirmation'),
+            onSuccess: () => {
+                toast.success('Account created successfully');
+            },
+            onError: () => {
+                toast.error('Failed to create account');
+            },
         });
     };
 

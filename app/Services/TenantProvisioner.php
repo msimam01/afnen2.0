@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Mail\TenantAdministratorOnboarding;
 use App\Models\Central\PendingTenantAdministrator;
 use App\Models\Central\Tenant;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use RuntimeException;
 
 class TenantProvisioner
@@ -58,6 +60,37 @@ class TenantProvisioner
 
             // Provision the exact tenant administrator supplied at creation
             TenantAdminProvisioner::provision($adminCredentials);
+
+            // Generate the tenant login URL
+            $tenantDomain = $tenant->domains->first()->domain ?? null;
+            $loginUrl = $tenantDomain ? "https://{$tenantDomain}/login" : null;
+
+            // Send onboarding email with temporary credentials
+            if ($loginUrl) {
+                try {
+                    Mail::to($adminCredentials['email'])->send(
+                        new TenantAdministratorOnboarding(
+                            tenantName: $tenant->name,
+                            administratorName: $adminCredentials['name'],
+                            administratorEmail: $adminCredentials['email'],
+                            temporaryPassword: $adminCredentials['password'],
+                            loginUrl: $loginUrl,
+                        )
+                    );
+
+                    Log::info('[TenantProvisioner] Onboarding email sent successfully', [
+                        'tenant_id' => $tenant->id,
+                        'admin_email' => $adminCredentials['email'],
+                    ]);
+                } catch (\Throwable $emailError) {
+                    // Log email failure but don't fail the provisioning
+                    Log::error('[TenantProvisioner] Failed to send onboarding email', [
+                        'tenant_id' => $tenant->id,
+                        'admin_email' => $adminCredentials['email'],
+                        'error' => $emailError->getMessage(),
+                    ]);
+                }
+            }
 
             // Only after successful administrator creation and role
             // assignment, remove the temporary central credential record.

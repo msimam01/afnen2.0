@@ -4,6 +4,7 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type User } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface UserMenuContentProps {
     user: User;
@@ -41,7 +42,14 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <Link className="block w-full" method="post" href={logoutRoute} as="button" onClick={cleanup}>
+                <Link
+                    className="block w-full"
+                    method="post"
+                    href={logoutRoute}
+                    as="button"
+                    onClick={cleanup}
+                    onSuccess={() => toast.success('Logged out successfully')}
+                >
                     <LogOut className="mr-2" />
                     Log out
                 </Link>

@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
+import toast from 'react-hot-toast';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -33,6 +34,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         e.preventDefault();
         post(route('login'), {
             onFinish: () => reset('password'),
+            onSuccess: () => {
+                toast.success('Login successful');
+            },
+            onError: () => {
+                toast.error('Invalid credentials');
+            },
         });
     };
 

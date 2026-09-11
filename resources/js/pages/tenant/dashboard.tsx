@@ -14,8 +14,6 @@ import { Link } from '@inertiajs/react';
 interface DashboardProps {
     tenantName?: string;
     userName?: string;
-    userRole?: string;
-    userPermissions?: string[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -25,8 +23,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function TenantDashboard({ tenantName, userName, userRole, userPermissions = [] }: DashboardProps) {
-    const hasPermission = (permission: string) => userPermissions.includes(permission);
+export default function TenantDashboard({ tenantName, userName }: DashboardProps) {
+    const page = usePage();
+    const { auth } = page.props as any;
+    const permissions = auth?.userPermissions || [];
+    const role = auth?.userRole || 'tenant-admin';
+
+    const hasPermission = (permission: string) => permissions.includes(permission);
 
     return (
         <TenantSidebarLayout breadcrumbs={breadcrumbs}>
@@ -137,7 +140,7 @@ export default function TenantDashboard({ tenantName, userName, userRole, userPe
                 <SectionCard title="Your Role" description="Current user role and permissions">
                     <div className="space-y-2">
                         <p className="text-sm text-sidebar-foreground">
-                            <span className="font-medium">Role:</span> {userRole || 'tenant-admin'}
+                            <span className="font-medium">Role:</span> {role}
                         </p>
                         <p className="text-sm text-sidebar-foreground">
                             <span className="font-medium">Organization:</span> {tenantName || 'Unknown'}

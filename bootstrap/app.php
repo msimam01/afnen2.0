@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IsCentralAdmin;
+use App\Http\Middleware\MustChangePassword;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,7 +22,17 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'central.admin' => IsCentralAdmin::class,
+            'must.change.password' => MustChangePassword::class,
         ]);
+
+        $middleware->redirectGuestsTo(function () {
+            $centralDomains = config('tenancy.central_domains', ['localhost', '127.0.0.1']);
+            if (! in_array(request()->getHost(), $centralDomains)) {
+                return route('tenant.login');
+            }
+
+            return route('login');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

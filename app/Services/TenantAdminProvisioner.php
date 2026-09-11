@@ -61,6 +61,7 @@ class TenantAdminProvisioner
                 'name' => $name,
                 'password' => $passwordHash,
                 'email_verified_at' => now(),
+                'must_change_password' => true,
             ]
         );
 

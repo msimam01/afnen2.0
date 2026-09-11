@@ -12,6 +12,7 @@ import AuthLayout from '@/layouts/auth-layout';
 interface ResetPasswordProps {
     token: string;
     email: string;
+    tenantName?: string;
 }
 
 interface ResetPasswordForm {
@@ -21,7 +22,7 @@ interface ResetPasswordForm {
     password_confirmation: string;
 }
 
-export default function ResetPassword({ token, email }: ResetPasswordProps) {
+export default function TenantResetPassword({ token, email, tenantName }: ResetPasswordProps) {
     const { data, setData, post, processing, errors, reset } = useForm<ResetPasswordForm>({
         token: token,
         email: email,
@@ -31,7 +32,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('password.store'), {
+        post(route('tenant.password.reset.store'), {
             onFinish: () => reset('password', 'password_confirmation'),
             onSuccess: () => {
                 toast.success('Password reset successfully');
@@ -43,7 +44,12 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     };
 
     return (
-        <AuthLayout title="Reset password" description="Please enter your new password below">
+        <AuthLayout 
+            title="AFNEN" 
+            subtitle="Agricultural Finance Network"
+            badge={tenantName}
+            description="Please enter your new password below"
+        >
             <Head title="Reset password" />
 
             <form onSubmit={submit}>

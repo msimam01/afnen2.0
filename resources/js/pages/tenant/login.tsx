@@ -1,8 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
+import toast from 'react-hot-toast';
 
 import InputError from '@/components/input-error';
+import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -32,6 +34,12 @@ export default function TenantLogin({ status, tenantName }: LoginProps) {
         e.preventDefault();
         post(route('tenant.login'), {
             onFinish: () => reset('password'),
+            onSuccess: () => {
+                toast.success('Login successful');
+            },
+            onError: () => {
+                toast.error('Invalid credentials');
+            },
         });
     };
 
@@ -63,7 +71,12 @@ export default function TenantLogin({ status, tenantName }: LoginProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
+                        <div className="flex items-center">
+                            <Label htmlFor="password">Password</Label>
+                            <TextLink href={route('tenant.password.request')} className="ml-auto text-sm" tabIndex={5}>
+                                Forgot password?
+                            </TextLink>
+                        </div>
                         <Input
                             id="password"
                             type="password"

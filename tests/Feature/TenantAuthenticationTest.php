@@ -1,16 +1,22 @@
 <?php
 
+use App\Models\Central\PendingTenantAdministrator;
 use App\Models\Central\Tenant;
 use App\Models\User;
 use App\Services\TenantAdminProvisioner;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
-    // Clean up any existing test tenant
-    $existing = Tenant::find('gombe-test');
-    if ($existing) {
-        $existing->delete();
+    // Clean up any existing test tenants and their databases
+    $existingTenants = ['gombe-test', 'isolation-test'];
+    foreach ($existingTenants as $tenantId) {
+        $existing = Tenant::find($tenantId);
+        if ($existing) {
+            // Delete the tenant (this will drop the database)
+            $existing->delete();
+        }
     }
 });
 
@@ -23,6 +29,8 @@ afterEach(function () {
 });
 
 test('tenant administrator exists after provisioning', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
     $tenant = Tenant::create([
         'id' => 'gombe-test',
         'data' => [
@@ -34,6 +42,14 @@ test('tenant administrator exists after provisioning', function () {
 
     $tenant->domains()->create([
         'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
     ]);
 
     // Wait for provisioning
@@ -52,18 +68,24 @@ test('tenant administrator exists after provisioning', function () {
         $attempts++;
     }
 
+    // Check if pending admin was deleted (indicates successful provisioning)
+    $pendingAdmin = PendingTenantAdministrator::where('tenant_id', $tenant->id)->first();
+    expect($pendingAdmin)->toBeNull();
+
     // Verify administrator exists in tenant database
-    $tenant->run(function () {
-        $testCredentials = TenantAdminProvisioner::getTestCredentials();
+    $tenant->run(function () use ($testCredentials) {
         $admin = User::where('email', $testCredentials['email'])->first();
 
         expect($admin)->not->toBeNull();
         expect($admin->name)->toBe($testCredentials['name']);
         expect($admin->email)->toBe($testCredentials['email']);
+        expect($admin->must_change_password)->toBeTrue();
     });
 });
 
 test('administrator has tenant-admin role', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
     $tenant = Tenant::create([
         'id' => 'gombe-test',
         'data' => [
@@ -75,6 +97,14 @@ test('administrator has tenant-admin role', function () {
 
     $tenant->domains()->create([
         'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
     ]);
 
     // Wait for provisioning
@@ -94,8 +124,7 @@ test('administrator has tenant-admin role', function () {
     }
 
     // Verify role assignment
-    $tenant->run(function () {
-        $testCredentials = TenantAdminProvisioner::getTestCredentials();
+    $tenant->run(function () use ($testCredentials) {
         $admin = User::where('email', $testCredentials['email'])->first();
 
         expect($admin->hasRole('tenant-admin'))->toBeTrue();
@@ -104,6 +133,8 @@ test('administrator has tenant-admin role', function () {
 });
 
 test('correct password can authenticate', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
     $tenant = Tenant::create([
         'id' => 'gombe-test',
         'data' => [
@@ -115,6 +146,14 @@ test('correct password can authenticate', function () {
 
     $tenant->domains()->create([
         'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
     ]);
 
     // Wait for provisioning
@@ -134,8 +173,7 @@ test('correct password can authenticate', function () {
     }
 
     // Verify authentication with correct password
-    $tenant->run(function () {
-        $testCredentials = TenantAdminProvisioner::getTestCredentials();
+    $tenant->run(function () use ($testCredentials) {
         $admin = User::where('email', $testCredentials['email'])->first();
 
         $authenticated = Auth::attempt([
@@ -149,6 +187,8 @@ test('correct password can authenticate', function () {
 });
 
 test('incorrect password fails authentication', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
     $tenant = Tenant::create([
         'id' => 'gombe-test',
         'data' => [
@@ -160,6 +200,14 @@ test('incorrect password fails authentication', function () {
 
     $tenant->domains()->create([
         'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
     ]);
 
     // Wait for provisioning
@@ -179,8 +227,7 @@ test('incorrect password fails authentication', function () {
     }
 
     // Verify authentication fails with incorrect password
-    $tenant->run(function () {
-        $testCredentials = TenantAdminProvisioner::getTestCredentials();
+    $tenant->run(function () use ($testCredentials) {
         $admin = User::where('email', $testCredentials['email'])->first();
 
         $authenticated = Auth::attempt([
@@ -195,6 +242,7 @@ test('incorrect password fails authentication', function () {
 test('authentication happens against tenant database', function () {
     // Use a different tenant ID to avoid conflicts
     $tenantId = 'isolation-test';
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
 
     // Clean up if exists
     $existing = Tenant::find($tenantId);
@@ -215,6 +263,14 @@ test('authentication happens against tenant database', function () {
         'domain' => 'isolation-test.afnen.com',
     ]);
 
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
+    ]);
+
     // Wait for provisioning
     $maxAttempts = 30;
     $attempts = 0;
@@ -232,8 +288,7 @@ test('authentication happens against tenant database', function () {
     }
 
     // Verify user exists only in tenant database, not central
-    $tenant->run(function () {
-        $testCredentials = TenantAdminProvisioner::getTestCredentials();
+    $tenant->run(function () use ($testCredentials) {
         $admin = User::where('email', $testCredentials['email'])->first();
 
         expect($admin)->not->toBeNull();
@@ -248,6 +303,8 @@ test('authentication happens against tenant database', function () {
 });
 
 test('provisioning is idempotent', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
     $tenant = Tenant::create([
         'id' => 'gombe-test',
         'data' => [
@@ -259,6 +316,14 @@ test('provisioning is idempotent', function () {
 
     $tenant->domains()->create([
         'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
     ]);
 
     // Wait for first provisioning
@@ -285,7 +350,6 @@ test('provisioning is idempotent', function () {
 
     // Run provisioning again (simulate re-provisioning)
     tenancy()->initialize($tenant);
-    $testCredentials = TenantAdminProvisioner::getTestCredentials();
     TenantAdminProvisioner::provision($testCredentials);
     tenancy()->end();
 
@@ -296,4 +360,116 @@ test('provisioning is idempotent', function () {
     });
 
     expect($userCountAfterSecond)->toBe($userCountAfterFirst);
+});
+
+test('newly provisioned administrator must change password', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
+    $tenant = Tenant::create([
+        'id' => 'gombe-test',
+        'data' => [
+            'name' => 'Test Tenant',
+        ],
+        'provisioning_status' => Tenant::PROVISIONING_PENDING,
+        'status' => Tenant::STATUS_INACTIVE,
+    ]);
+
+    $tenant->domains()->create([
+        'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
+    ]);
+
+    // Wait for provisioning
+    $maxAttempts = 30;
+    $attempts = 0;
+
+    while ($attempts < $maxAttempts) {
+        $tenant->refresh();
+        if ($tenant->provisioning_status === Tenant::PROVISIONING_READY) {
+            break;
+        }
+        if ($tenant->provisioning_status === Tenant::PROVISIONING_FAILED) {
+            $this->fail('Tenant provisioning failed');
+        }
+        sleep(1);
+        $attempts++;
+    }
+
+    // Verify administrator has must_change_password flag
+    $tenant->run(function () use ($testCredentials) {
+        $admin = User::where('email', $testCredentials['email'])->first();
+
+        expect($admin->must_change_password)->toBeTrue();
+    });
+});
+
+test('password change clears must_change_password flag', function () {
+    $testCredentials = TenantAdminProvisioner::getTestCredentials();
+
+    $tenant = Tenant::create([
+        'id' => 'gombe-test',
+        'data' => [
+            'name' => 'Test Tenant',
+        ],
+        'provisioning_status' => Tenant::PROVISIONING_PENDING,
+        'status' => Tenant::STATUS_INACTIVE,
+    ]);
+
+    $tenant->domains()->create([
+        'domain' => 'gombe-test.afnen.com',
+    ]);
+
+    // Create pending administrator record
+    PendingTenantAdministrator::create([
+        'tenant_id' => $tenant->id,
+        'name' => $testCredentials['name'],
+        'email' => $testCredentials['email'],
+        'password' => $testCredentials['password'],
+    ]);
+
+    // Wait for provisioning
+    $maxAttempts = 30;
+    $attempts = 0;
+
+    while ($attempts < $maxAttempts) {
+        $tenant->refresh();
+        if ($tenant->provisioning_status === Tenant::PROVISIONING_READY) {
+            break;
+        }
+        if ($tenant->provisioning_status === Tenant::PROVISIONING_FAILED) {
+            $this->fail('Tenant provisioning failed');
+        }
+        sleep(1);
+        $attempts++;
+    }
+
+    // Simulate password change
+    $tenant->run(function () use ($testCredentials) {
+        $admin = User::where('email', $testCredentials['email'])->first();
+
+        $admin->update([
+            'password' => Hash::make('new-password-123'),
+            'must_change_password' => false,
+        ]);
+
+        // Verify flag is cleared
+        $admin->refresh();
+        expect($admin->must_change_password)->toBeFalse();
+
+        // Verify new password works
+        $authenticated = Auth::attempt([
+            'email' => $testCredentials['email'],
+            'password' => 'new-password-123',
+        ]);
+
+        expect($authenticated)->toBeTrue();
+        Auth::logout();
+    });
 });

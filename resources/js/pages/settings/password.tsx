@@ -5,6 +5,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
+import toast from 'react-hot-toast';
 
 import HeadingSmall from '@/components/heading-small';
 import { Button } from '@/components/ui/button';
@@ -37,8 +38,12 @@ export default function Password() {
 
         put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                toast.success('Password updated successfully');
+            },
             onError: (errors) => {
+                toast.error('Failed to update password. Please check your input.');
                 if (errors.password) {
                     reset('password', 'password_confirmation');
                     passwordInput.current?.focus();

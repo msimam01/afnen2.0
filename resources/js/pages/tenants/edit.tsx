@@ -1,5 +1,6 @@
 import { Building2, Globe, Loader2, Lock } from 'lucide-react';
 import { Head, Link, useForm } from '@inertiajs/react';
+import toast from 'react-hot-toast';
 
 import { PageContainer } from '@/components/page-container';
 import { PageHeader } from '@/components/page-header';
@@ -50,7 +51,14 @@ export default function TenantEdit({ tenant, pending_administrator }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(`/tenants/${tenant.id}`);
+        put(`/tenants/${tenant.id}`, {
+            onSuccess: () => {
+                toast.success('Tenant updated successfully');
+            },
+            onError: () => {
+                toast.error('Failed to update tenant');
+            },
+        });
     };
 
     return (

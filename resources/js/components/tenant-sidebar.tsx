@@ -18,7 +18,7 @@ const footerNavItems: NavItem[] = [
 
 export function TenantSidebar() {
     const { auth } = usePage().props as any;
-    const userPermissions = auth?.user?.permissions || [];
+    const userPermissions = auth?.userPermissions || [];
 
     // Filter navigation items based on user permissions
     const filteredNavItems = tenantNavigation.items.filter(item => {

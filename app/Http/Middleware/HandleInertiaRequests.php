@@ -56,8 +56,9 @@ class HandleInertiaRequests extends Middleware
 
             // Add user permissions if authenticated
             if ($request->user()) {
-                $sharedData['auth']['user']['role'] = $request->user()->getRoleNames()->first();
-                $sharedData['auth']['user']['permissions'] = $request->user()->getAllPermissions()->pluck('name');
+                $sharedData['auth']['user'] = $request->user()->only(['id', 'name', 'email', 'email_verified_at', 'must_change_password', 'created_at', 'updated_at']);
+                $sharedData['auth']['userRole'] = $request->user()->getRoleNames()->first();
+                $sharedData['auth']['userPermissions'] = $request->user()->getAllPermissions()->pluck('name');
             }
         }
 
